@@ -32,6 +32,21 @@ router.post('/signup', async function(req, res, next){
     }
 
     // 비밀번호 암호화
+    var salt = bcrypt.genSaltSync(saltRounds);
+    var hash = bcrypt.hashSync(password, salt);
+
+    // DB에 사용자 정보 저장
+    await users.insertOne({
+     uisername: username,
+     password: hash,
+     nickname: nickname,
+     createdAt: new Date()
+    });
+
+    res.status(201).json({message: 'User registered successfully.'});
+  } catch(error) {
+    console.error('Error during signup: ', error);
+    res.status(500).json({message: 'Internal server error.'});
   }
 });
 
