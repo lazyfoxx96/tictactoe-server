@@ -34,7 +34,7 @@ router.post('/signup', async function(req, res, next) {
     // 중복된 username 확인
     var existingUser = await users.findOne({ username: username });
     if (existingUser) {
-      return res.status(409).json({ message: 'Username already exists.' });
+      return res.status(409).json({ result: ResponseType.INVALID_USERNAME });
     }
 
     // 비밀번호 암호화
@@ -49,7 +49,7 @@ router.post('/signup', async function(req, res, next) {
       createdAt: new Date()
     });
 
-    res.status(201).json({ message: 'User registered successfully.' });
+    res.status(201).json({ result: ResponseType.SUCCESS });
   } catch (error) {
     console.error('Error during signup:', error);
     res.status(500).json({ message: 'Internal server error.' });
