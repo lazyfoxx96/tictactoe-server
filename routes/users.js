@@ -94,4 +94,90 @@ router.post('/signin', async function(req, res, next) {
   }
 });
 
+// 로그아웃
+router.get('/signout', function(req, res, next) {
+  if (req.session) {
+    // 세션 삭제
+    req.session.destroy(function(err) {
+      if (err) {
+        return res.status(500).json({ message: 'Failed to log out.' });
+      } else {
+        return res.json({ message: 'Logged out successfully.' });
+      }
+    });
+  } else {
+    res.json({ message: 'No active session.' });
+  }
+});
+
+// 마지막 점수 업데이트
+router.post('/addscore', async function(req, res, next) {
+  try {
+    if (!req.session.isAuthenticated) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    var userId = req.session.userId;
+    var score = req.body.score;
+
+    if (!score || isNaN(score)) {
+      return res.status(400).json({ message: 'Invalid score' });
+    }
+
+    var database = req.app.get('database');
+    var users = database.collection('users');
+
+    const result = await users.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { 
+        score: Number(score),
+        updatedAt: new Date() 
+      }}
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'Score updated successfully' });
+  } catch (error) {
+    console.error('Error updating score:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// 점수 조회
+router.get('/score', async function(req, res, next) {
+  try {
+
+    if (!req.session.isAuthenticated) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    var userId = req.session.userId;
+    
+    var database = req.app.get('database');
+    var users = database.collection('users');
+
+    const user = await users.findOne(
+      { _id: new ObjectId(userId) }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      id: user._id.toString(),
+      username: user.username,
+      nickname: user.nickname,
+      score: user.score || 0
+    });
+
+  } catch (error) {
+    console.error('Error fetching score:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 module.exports = router;
